@@ -50,7 +50,15 @@ Gotowy plik `usermode/release/usermode.exe` jest juz dolaczony do projektu. Nie 
 
 ## Uruchomienie lokalne
 
-Uruchom trzy elementy w osobnych oknach PowerShell, w podanej kolejnosci.
+Po instalacji uruchom plik `radar.bat` znajdujacy sie w katalogu glownym projektu. Skrypt automatycznie:
+
+1. uruchomi serwer WebSocket i frontend;
+2. uruchomi gotowy `usermode.exe` z uprawnieniami administratora;
+3. uruchomi overlay Python.
+
+Skrypty korzystaja ze sciezki katalogu projektu (`%~dp0`), dlatego projekt mozna umiescic w dowolnym katalogu i na innym komputerze bez zmieniania sciezek.
+
+Mozesz tez uruchomic elementy recznie w osobnych oknach PowerShell, w podanej kolejnosci.
 
 ### 1. Serwer WebSocket i frontend
 
@@ -77,8 +85,8 @@ Domyslna konfiguracja laczy sie z `localhost`. Aby uzyc innego adresu, zmien pol
 W osobnym oknie uruchom:
 
 ```powershell
-cd D:\cs2_webradar-main
-\.\venv\Scripts\python.exe .\radar_overlay.py
+cd .
+.\venv\Scripts\python.exe .\radar_overlay.py
 ```
 
 Skróty klawiszowe overlayu:
