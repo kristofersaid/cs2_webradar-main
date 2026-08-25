@@ -1,0 +1,1 @@
+start "CS2 WebRadar overlay" "%ROOT%venv\Scripts\python.exe" "%ROOT%radar_overlay.py"
