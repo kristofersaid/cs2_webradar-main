@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "TASAOrbiter";
+  src: url("./assets/typefaces/TASAOrbiterVF.woff2");
+}
+
+:root {
+  --text-primary: #b1d0e7;
+  --text-secondary: #6492b4;
+}
+
+* {
+  outline-offset: 4px;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent !important;
+  overflow: hidden;
+  font-family: "TASAOrbiter";
+  color: var(--text-primary);
+}
+
+/* overlay wypełnia całe okno */
+.overlay-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.75);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* radar dopasowuje się do okna - zachowuje kwadrat */
+#radar {
+  width: min(100vw, 100vh) !important;
+  height: min(100vw, 100vh) !important;
+  position: relative;
+}
+
+#radar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  display: block;
+}
+
+/* bomb timer */
+.bomb-timer {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px 10px;
+  border-radius: 6px;
+  z-index: 50;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* waiting message */
+.waiting-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: white;
+  text-align: center;
+}
+
+.waiting-message h1 {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* Animacja pulsującego pierścienia dla lokalnego gracza */
+@keyframes localPlayerPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0.4;
+    box-shadow: 0 0 0 8px rgba(255, 215, 0, 0);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+  }
+}
