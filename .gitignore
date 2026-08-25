@@ -1,7 +1,6 @@
 venv/
 webapp/node_modules/
 webapp/dist/
-usermode/release/intermediates/
 usermode/vcpkg_installed/
 __pycache__/
 *.py[cod]
