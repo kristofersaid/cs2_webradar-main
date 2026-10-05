@@ -5,3 +5,6 @@ usermode/vcpkg_installed/
 __pycache__/
 *.py[cod]
 .vs/
+
+# Pliki runtime overlay (stan lokalny, nadpisywany przy starcie)
+overlay_config.json

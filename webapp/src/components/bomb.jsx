@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { getRadarPosition } from "../utilities/utilities";
 
 // 🎨 KOLORY BOMBY
@@ -8,23 +7,19 @@ const BOMB_COLOR_DEFUSED = "#50FF50";   // Zielony - rozbrojona
 // 📏 ROZMIAR BOMBY
 const BOMB_SIZE_MULTIPLIER = 2.5;       // 1.0 = domyślne, 2.5 = mocno większa
 
-const Bomb = ({ bombData, mapData, radarImage, localTeam, settings }) => {
+const Bomb = ({ bombData, mapData, radarSizePx = 0, localTeam, settings }) => {
   const radarPosition = getRadarPosition(mapData, bombData);
-
-  const bombRef = useRef();
-  const bombBounding = (bombRef.current &&
-    bombRef.current.getBoundingClientRect()) || { width: 0, height: 0 };
-
-  const radarImageBounding = (radarImage !== undefined &&
-    radarImage.getBoundingClientRect()) || { width: 0, height: 0 };
-  const radarImageTranslation = {
-    x: radarImageBounding.width * radarPosition.x - bombBounding.width * 0.5,
-    y: radarImageBounding.height * radarPosition.y - bombBounding.height * 0.5,
-  };
 
   // Rozmiar bomby
   const baseSize = 1.5;
   const scaledSize = baseSize * settings.bombSize * BOMB_SIZE_MULTIPLIER;
+
+  // Czysta arytmetyka na zmierzonym raz rozmiarze radaru (zero odczytów DOM na tick).
+  const bombPx = scaledSize * (window.innerWidth / 100);
+  const radarImageTranslation = {
+    x: radarSizePx * radarPosition.x - bombPx * 0.5,
+    y: radarSizePx * radarPosition.y - bombPx * 0.5,
+  };
 
   // Kolor bomby - zawsze biały, chyba że rozbrojona
   const bombColor = bombData.m_is_defused ? BOMB_COLOR_DEFUSED : BOMB_COLOR_DEFAULT;
@@ -32,7 +27,6 @@ const Bomb = ({ bombData, mapData, radarImage, localTeam, settings }) => {
   return (
     <div
       className={`absolute origin-center left-0 top-0`}
-      ref={bombRef}
       style={{
         width: `${scaledSize}vw`,
         height: `${scaledSize}vw`,

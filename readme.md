@@ -40,7 +40,7 @@ Utworz i aktywuj srodowisko Python, a nastepnie zainstaluj zaleznosci overlayu:
 py -m venv venv
 .\venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install PyQt5 PyQtWebEngine keyboard
+python -m pip install PyQt5 PyQtWebEngine keyboard websocket-client
 deactivate
 ```
 
@@ -67,7 +67,25 @@ cd .\webapp
 npm run dev
 ```
 
-Serwer WebSocket bedzie nasluchiwal na `localhost:22006`, a frontend bedzie dostepny pod adresem `http://localhost:5173`.
+Serwer WebSocket nasluchuje na `0.0.0.0:22006` (localhost + LAN), a frontend na `0.0.0.0:5173`.
+
+### Podgląd na telefonie w tej samej sieci Wi-Fi
+
+Dane zawsze pochodzą tylko z komputera-hosta (PC z CS2 + `usermode.exe`).
+Frontend automatycznie łączy WebSocket do tego samego hosta, z którego załadowano stronę
+(`window.location.hostname`), więc nic nie trzeba wpisywać ręcznie:
+
+1. Na PC uruchom normalnie `radar.bat` (CS2 musi działać + `usermode.exe`).
+2. W oknie serwera znajdź linijkę `LAN podglad: http://192.168.X.X:5173`
+   (albo na PC sprawdź IP: `ipconfig` -> adres IPv4, np. `192.168.1.10`).
+3. Na telefonie (to samo Wi-Fi) otwórz `http://<IP-PC>:5173`, np. `http://192.168.1.10:5173`.
+4. Telefon sam połączy się do `ws://<IP-PC>:22006/cs2_webradar` i pokaże ten sam radar co PC.
+
+Uwaga: przy pierwszym uruchomieniu Windows Firewall zapyta o dostęp dla Node.js - kliknij
+"Zezwalaj" (sieci prywatne). Jeśli telefon nie łączy, ręcznie odblokuj porty TCP `5173` i `22006`
+dla sieci prywatnej albo uruchom PowerShell jako administrator:
+`New-NetFirewallRule -DisplayName "CS2 Radar 5173" -Direction Inbound -LocalPort 5173 -Protocol TCP -Action Allow`
+`New-NetFirewallRule -DisplayName "CS2 Radar 22006" -Direction Inbound -LocalPort 22006 -Protocol TCP -Action Allow`
 
 ### 2. Moduł usermode
 
@@ -78,7 +96,8 @@ cd .\usermode\release
 .\usermode.exe
 ```
 
-Domyslna konfiguracja laczy sie z `localhost`. Aby uzyc innego adresu, zmien pole `m_ip` w `usermode/config.json`.
+Domyslna konfiguracja (`m_ip: localhost`) jest poprawna i zostaw ją - `usermode.exe` działa
+na tym samym PC co serwer WebSocket, więc łączy się lokalnie. Nie zmieniaj jej na IP telefonu.
 
 ### 3. Overlay
 
@@ -99,5 +118,7 @@ Do obslugi globalnych skrotow klawiszowych uruchom overlay jako administrator.
 ## Uwagi
 
 - Przed uruchomieniem overlayu musza dzialac frontend i serwer WebSocket.
-- Przy zmianie komputera lub adresu sieciowego zaktualizuj `m_ip` w `usermode/config.json` oraz ustaw odpowiedni adres w `webapp/src/app.jsx`.
+- `usermode/config.json` zostaw na `localhost` (usermode zawsze wysyła do lokalnego serwera na PC-hoście).
+  Adresu WebSocket we frontendzie (`webapp/src/app.jsx`) nie trzeba już zmieniać - wykrywa się sam
+  z `window.location.hostname`, z auto-reconnect co 2 s.
 - Nie commituj lokalnego katalogu `venv`, `node_modules` ani plikow wynikowych kompilacji.

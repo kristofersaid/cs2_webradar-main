@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Pliki runtime serwera (pozycje siteow, cache awatarow) — tworzone na hoście
+ws/bombsites-overrides.json
+ws/avatars.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

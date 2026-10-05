@@ -1,0 +1,150 @@
+MOJE KONTO STEAM — JAK TO DZIAŁA (automatycznie)
+==================================================
+
+Nic nie musisz robić. Radar SAM wykrywa, którym graczem jesteś:
+
+1. Serwer (ws/app.js) odczytuje konto zalogowane w Steam na tym PC
+   (rejestr ActiveUser albo config/loginusers.vdf).
+2. CS2 zawsze działa na tym koncie, więc to na 100% jesteś Ty.
+3. Serwer wysyła je do wszystkich podglądów (PC + telefon),
+   a radar rysuje je na ZIELONO — na każdym Twoim koncie,
+   bez list, bez klikania, bez zmian w wyglądzie mapy.
+
+Po przełączeniu konta w Steam serwer wykryje je sam (co ~15 s).
+
+LISTA ZAPASOWA (gdyby auto-detect kiedyś nie zadziałał):
+--------------------------------------------------------
+Plik webapp/public/my_steam_accounts.json:
+
+  [
+    "76561199250613456",
+    "76561198636183978"
+  ]
+
+Żeby dopisać konto, dodaj tam jego SteamID64
+(https://steamcommunity.com/profiles/<TU_WKLEJ> -> 17 cyfr),
+zapisz i odśwież stronę (F5).
+
+LITERY A/B NA BOMBSITE'ACH:
+---------------------------
+Literę A/B możesz po prostu ZŁAPAĆ i PRZESUNĄĆ (myszka na PC,
+palec na telefonie) — pozycja zapisze się sama, pokaże się OD RAZU
+na wszystkich odpalonych podglądach (PC, telefon, overlay)
+i zostanie na potem (serwer trzyma ją w pliku
+webapp/ws/bombsites-overrides.json).
+Podwójny klik litery = reset pozycji na mapie (też wszędzie).
+Uwaga: w overlayu nad grą nie da się przeciągać (przepuszcza mysz),
+więc ustaw raz w przeglądarce (http://localhost:5173).
+Pozycje startowe są w pliku webapp/src/utilities/bombsites.js.
+TRYB FOLLOW (mapa podąża za Tobą, przybliżona):
+-------------------------------------------------
+Otwórz radar z parametrem ?follow=1, np.:
+
+  http://localhost:5173/?follow=1
+  http://192.168.1.10:5173/?follow=1           (telefon)
+  http://192.168.1.10:5173/?follow=1&zoom=3    (mocniejszy zoom)
+
+Mapa centruje się na Tobie (zielony) i jest powiększona (domyślnie
+2.5x, parametrem zoom ustawisz 1.2–5). Mapa się NIE obraca — przesuwa
+się tylko widok. Bez parametru wszystko działa jak dawniej.
+Jeśli follow nie trafia na Ciebie: (1) zrestartuj radar.bat (serwer
+musi znać Twoje konto), albo (2) otwórz z jawnym ID, np.
+http://localhost:5173/?follow=76561198636183978
+Diagnostyka: w przeglądarce wciśnij F12 -> Konsola, jest tam linia
+[follow] co śledzi / czego brakuje.
+
+WŁASNE KOLORY GRACZY (w linku):
+--------------------------------
+Dopisz ?colors=STEAMID:HEX po przecinku (hex z # lub bez, 3 lub 6 znaków):
+
+  http://localhost:5173/?colors=76561198636183978:#ff00ff,76561199250613456:00ff00
+
+Taki gracz dostaje dokładnie ten kolor kropki (zamiast zielony/niebieski/
+czerwony). Działa też łącznie z ?follow=1. Biała obwódka Twojej kropki
+zostaje, żeby było widać, kim jesteś.
+
+AWATARY WROGÓW (?pfp=1):
+------------------------
+Dopisz ?pfp=1, np. http://localhost:5173/?pfp=1 — nad kropkami graczy
+PRZECIWNEJ drużyny pojawiają się ich awatary ze Steam.
+Rozmiar: ?pfpsize=icon (32px) / medium (64px) / full (184px, domyślny)
+         / mega (256x256 px, full przeskalowany w górze),
+np. http://localhost:5173/?pfp=1&pfpsize=mega
+W konsoli overlay: pfp on [icon|medium|full|mega]  albo  pfp rozmiar <...>
+
+LISTA GRACZY (?lista=...):
+------------------------
+  ?lista=1 (albo ?list=1) — numerki nad kropkami + mała lista z nazwami.
+  ?lista=badges           — SAME numerki, lista tylko w konsoli overlay.
+  ?lista=panel            — sama lista, bez numerków.
+Numerki 1..N są TYLKO nad wrogami (Ty i koledzy bez znaczków).
+Numeracja po SteamID — ta sama co w komendzie 'lista', więc
+'kolor 2 ...' trafia w "dwójkę" z mapy. Stabilna w meczu.
+
+OSOBNA STRONA / OKNO TYLKO Z LISTĄ:
+-----------------------------------
+  http://localhost:5173/?panel=1 — sama lista, bez mapy,
+  przezroczyste tło (nie białe). Kolory znaczków jak na radarze
+  (przekaż też ?colors=... jeśli ich używasz).
+W konsoli overlay komenda 'lista on' (albo 'lista panel') otwiera
+AUTOMATYCZNIE drugie okienko tuż na prawo od radaru właśnie z tą
+stroną. Okno ma wysokość treści listy (max tyle co radar, min. 120px)
+i dopasowuje się samo co chwilę. 'lista off' je chowa, F8 chowa/pokazuje
+oba razem.
+START: overlay zawsze startuje z CZYSTYM linkiem (jak po 'reset') —
+poprzednia sesja się nie przywraca. Działa z ?follow=1, ?pfp=1, ?colors=.
+W konsoli overlay: lista on (=oba) / lista badges / lista panel /
+lista off (=tylko konsola). Sama komenda 'lista' bez niczego dalej
+pokazuje wrogów do kolorowania.
+Awatary pobiera serwer na PC (przeglądarka nie może — Steam blokuje),
+pierwsze wczytanie wrogów trwa kilka sekund, potem jest z górki
+(cache na serwerze i w przeglądarce). Martwy wróg ma przygaszony awatar.
+Działa też łącznie z ?follow=1 i ?colors=.
+WAŻNE: wymaga zrestartowania radar.bat (nowy kod serwera).
+
+AWATARY NIE DZIAŁAJĄ? Sprawdź po kolei:
+1. Link ma ?pfp=1 (albo w konsoli overlay: pfp on).
+2. Zrestartowałeś radar.bat po tej aktualizacji? (serwer pobiera awatary)
+3. W meczu są wrogowie? Awatary są tylko nad PRZECIWNA drużyną,
+   leżą NAD mapą ale POD kropkami.
+4. W przeglądarce F12 -> Konsola: ma być "[pfp] proszę serwer..."
+   i potem "[pfp] odebrano N awatarów". Jeśli jest tylko prośba,
+   patrz w okno serwera: "awatary: prośba o N" i dalej
+   "awatar <id>: pobrano" albo powód (np. HTTP 403 / brak sieci /
+   stary Node bez fetch — potrzebny Node 18+).
+Podeślij te dwie linijki (konsola + serwer) to powiem co dalej.
+
+PANEL STEROWANIA GUI (okno pod radarem):
+------------------------------------------
+Razem z overlayem otwiera się zwykłe okienko (da się klikać):
+- lista wrogów z numerkami jak na radarze, a przy każdym przycisk
+  z kolorem — klik otwiera COLOR PICKER (wybierasz, zatwierdzasz);
+  ✕ zdejmuje kolor,
+- checkbox Awatary (pfp) + wybór rozmiaru (presety albo WŁASNE px
+  w polu obok, 16–512, np. 128),
+- DWA osobne toggles: Numerki (znaczki nad kropkami) i Lista
+  (osobne okno) — niezależnie od siebie,
+- przyciski ZAPISZ i Reset, podgląd linków do kopiowania, status.
+UWAGA: zmiany w GUI tylko się ODKŁADAJĄ (przycisk pokazuje ●) —
+link aktualizuje się DOPIERO po kliknięciu ZAPISZ. Konsola
+działa jak dotąd od razu. W linku ręczny rozmiar to np.
+?pfp=1&pfpsize=128, w konsoli: pfp rozmiar 128.
+RAZ doinstaluj bibliotekę (lista wrogów w konsoli/panelu jej wymaga):
+  .\venv\Scripts\python.exe -m pip install websocket-client
+
+KONSOLA OVERLAY (kolory + pfp bez grzebania w linkach):
+-------------------------------------------------------
+
+Potem odpalasz overlay jak zwykle i w jego konsoli wpisujesz:
+  lista                  - wrogowie z numerami (działa w meczu)
+  kolor <nr> <hex>       - np. kolor 2 ff00ff
+  kolor <steamid> <hex>  - albo od razu po SteamID64
+  kolory                 - wypisz wszystkie ręcznie przypisane kolory
+  usun <nr|steamid>      - zdejmij kolor
+  pfp on / pfp off       - awatary wrogów wł./wył.
+                         (pfp on icon|medium|full = od razu z rozmiarem)
+  pfp rozmiar <...>      - zmień rozmiar awatara (icon/medium/full)
+  link                   - pokaż aktualny link
+  reset                  - CZYSTY link (kasuje kolory i pfp)
+  q                      - zamknij overlay
+Wybór zapisuje się w overlay_config.json (zostaje po restarcie).
