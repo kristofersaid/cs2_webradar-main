@@ -39,6 +39,26 @@ PANEL_H = 430
 
 STEAM_ID_RE = re.compile(r"^765\d{14}$")
 HEX_RE = re.compile(r"^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$")
+
+
+def pick_base_url(timeout=0.7):
+    """Wybierz żywy frontend: najpierw dev :5173 (vite), potem combo :22006.
+    Dzięki temu overlay (i okno listy) działa w KAŻDYM przepływie —
+    z tunelem i bez — bez zmiany kodu. Zwraca np. 'http://localhost:5173'."""
+    import socket
+    for port in (5173, 22006):
+        try:
+            s = socket.create_connection(("127.0.0.1", port), timeout=timeout)
+            s.close()
+            return f"http://localhost:{port}"
+        except OSError:
+            continue
+    return BASE_URL
+
+
+def base_of(state):
+    """Baza linków: wykryty żywy frontend (5173/22006) albo domyślna."""
+    return state.get("base_url") or BASE_URL
 PFP_SIZES = ("icon", "medium", "full", "mega")
 
 
@@ -421,10 +441,11 @@ class ControlPanel(QMainWindow):
         self._panel_cb.blockSignals(True)
         self._panel_cb.setChecked(panel_on)
         self._panel_cb.blockSignals(False)
-        # linki + status
+        # linki + status (baza wykryta na starcie — działa z tunelem i bez)
+        base = base_of(self._s)
         self._link_radar.setText("Radar: " + build_overlay_url(
-            BASE_URL, colors, pfp, pfp_size, radar_lista_for_mode(lista)))
-        self._link_list.setText("Lista: " + build_list_url(BASE_URL, colors))
+            base, colors, pfp, pfp_size, radar_lista_for_mode(lista)))
+        self._link_list.setText("Lista: " + build_list_url(base, colors))
         self._status.setText(f"{len(enemies)} wrogów • {map_name or 'brak meczu'}")
         self._save_btn.setText("💾 Zapisz ●" if self._dirty else "💾 Zapisz")
 
@@ -758,8 +779,9 @@ def handle_command(cmd, state, state_lock, emitter):
 
     if name == "link":
         with state_lock:
-            radar_url = build_overlay_url(BASE_URL, state["colors"], state["pfp"], state.get("pfp_size", "full"), radar_lista_for_mode(state.get("lista", "off")))
-            list_url = build_list_url(BASE_URL, state["colors"])
+            base = base_of(state)
+            radar_url = build_overlay_url(base, state["colors"], state["pfp"], state.get("pfp_size", "full"), radar_lista_for_mode(state.get("lista", "off")))
+            list_url = build_list_url(base, state["colors"])
         print(f"[link radar] {radar_url}")
         print(f"[link lista] {list_url}")
         return None
@@ -862,7 +884,13 @@ def main():
     state_lock = threading.RLock()
     stop_event = threading.Event()
 
-    start_url = build_overlay_url(BASE_URL, state["colors"], state["pfp"], state["pfp_size"],
+    # Sonda frontendów: overlay działa niezależnie od przepływu
+    # (dev :5173 albo combo :22006, z tunelem i bez).
+    picked_base = pick_base_url()
+    print(f"[overlay] wykryty frontend: {picked_base}")
+    state["base_url"] = picked_base
+
+    start_url = build_overlay_url(picked_base, state["colors"], state["pfp"], state["pfp_size"],
                                   radar_lista_for_mode(state["lista"]))
 
     app = QApplication(sys.argv)
@@ -875,7 +903,8 @@ def main():
             with state_lock:
                 colors = dict(state["colors"])
                 mode = state.get("lista", "off")
-            overlay.set_url(build_overlay_url(BASE_URL, colors, state["pfp"],
+                base = base_of(state)
+            overlay.set_url(build_overlay_url(base, colors, state["pfp"],
                                               state.get("pfp_size", "full"),
                                               radar_lista_for_mode(mode)))
             if mode in ("panel", "both"):
@@ -883,7 +912,7 @@ def main():
                 if w is None:
                     w = ListOverlay()
                     holder["list_window"] = w
-                w.set_url(build_list_url(BASE_URL, colors))
+                w.set_url(build_list_url(base, colors))
                 if overlay.visible:
                     w.show()
             else:
@@ -947,7 +976,14 @@ def main():
         print("[ws] Napraw JEDNĄ komendą w nowym oknie PowerShell:")
         print("[ws]   D:\\cs2_webradar-main> .\\venv\\Scripts\\python.exe -m pip install websocket-client")
     threading.Thread(target=ws_loop, args=(state, state_lock, stop_event), daemon=True).start()
-    threading.Thread(target=console_loop, args=(state, state_lock, emitter, stop_event), daemon=True).start()
+    # Tryb orkiestratora (radar.bat): konsola należy do głównego okna
+    # (komenda 'q' zamyka wszystko), więc pętla input() jest wyłączona.
+    # Włączenie: flaga --no-console albo RADAR_NO_CONSOLE=1.
+    no_console = "--no-console" in sys.argv or os.environ.get("RADAR_NO_CONSOLE") == "1"
+    if no_console:
+        print("[konsola] sterowanie z tej konsoli WYŁĄCZONE (wpisz q w głównym oknie radar.bat)")
+    else:
+        threading.Thread(target=console_loop, args=(state, state_lock, emitter, stop_event), daemon=True).start()
 
     # Panel sterowania GUI (pickery + przełączniki) — zwykłe okno pod radarem.
     panel = ControlPanel(state, state_lock, emitter)
