@@ -8,3 +8,6 @@ __pycache__/
 
 # Pliki runtime overlay (stan lokalny, nadpisywany przy starcie)
 overlay_config.json
+# Lokalny klon pod tunel internetowy (osobne życie, bez gita)
+# UWAGA: to jedyna zmiana w projekcie głównym przy okazji klonu tunel/
+tunel/

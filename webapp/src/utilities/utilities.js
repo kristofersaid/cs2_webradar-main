@@ -64,6 +64,34 @@ export const parseListMode = (raw) => {
   return "off";
 };
 
+// WebSocket: w LAN ten sam host co strona. Przez tunel (https, np. Cloudflare)
+// dane idą z tego samego origin co strona: wss://host/cs2_webradar.
+// Ręcznie (playit/nietypowo): ?ws=HOST:PORT albo ?ws=ws(s)://...
+export const WS_PATH = "/cs2_webradar";
+export const DEFAULT_WS_PORT = 22006;
+
+export const resolveWebSocketURL = (search, hostname, defaultPort = DEFAULT_WS_PORT, protocol = "") => {
+  let custom = "";
+  try {
+    const qp = search instanceof URLSearchParams ? search : new URLSearchParams(search || "");
+    custom = (qp.get("ws") || "").trim();
+  } catch {
+    custom = "";
+  }
+  if (/^wss?:\/\//i.test(custom)) {
+    const noTrail = custom.replace(/\/+$/, "");
+    const afterProto = noTrail.replace(/^wss?:\/\//i, "");
+    return afterProto.includes("/") ? noTrail : `${noTrail}${WS_PATH}`;
+  }
+  if (custom) {
+    return `ws://${custom.replace(/\/+$/, "")}${WS_PATH}`;
+  }
+  if (String(protocol).toLowerCase() === "https:") {
+    return `wss://${hostname || "localhost"}${WS_PATH}`;
+  }
+  return `ws://${hostname || "localhost"}:${defaultPort}${WS_PATH}`;
+};
+
 // Rozmiar awatara (?pfpsize=): icon/medium/full do pozycjonowania jak zwykle,
 // mega = sztywne 256px, liczba = ręczne px (16..512, clamp).
 // Zwraca gotowy CSS (liczba vw albo px).

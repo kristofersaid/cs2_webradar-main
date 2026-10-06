@@ -1,0 +1,40 @@
+JAK DAĆ LINK KOLEDZE (radar przez internet, za darmo)
+=====================================================
+Kolega dostaje zwykły link https, NIC nie instaluje, nie potrzebuje VPN ani konta.
+
+ZASADA: serwer na Twoim PC serwuje stronę I dane z JEDNEGO portu (22006),
+a darmowy Cloudflare Tunnel wystawia ten port do internetu. Kolega otwiera
+goły link — strona sama bierze dane z tego samego adresu (wss).
+
+KROK 1 — start u Ciebie (w tej kolejności!):
+--------------------------------------------
+1. CS2 musi działać.
+2. Uruchom tunel_start.bat (zbuduje frontend, wstanie serwer 22006,
+   usermode i overlay jak zwykle). NIE odpalaj w tym czasie zwykłego
+   radar.bat (konflikt o port 22006).
+3. Sprawdź lokalnie: http://localhost:22006/ ma pokazać radar.
+4. Uruchom tunel_cloudflared.bat (cloudflared.exe leży obok w projekcie).
+   W jego oknie pojawi się coś jak:
+     https://losowe-slowa.trycloudflare.com
+5. Wyślij koledze TEN link (goły, bez dopisków).
+
+KROK 2 — kolega:
+----------------
+Otwiera link w przeglądarce (telefon/PC) i widzi Twój radar na żywo.
+Może dokleić parametry jak Ty, np. ...trycloudflare.com/?follow=1&pfp=1
+Awatary, kolory, numerki, litery A/B — wszystko działa (dane idą tunelem).
+
+WAŻNE / PROBLEMY:
+------------------
+- Link trycloudflare.com żyje dopóki działa okno tunel_cloudflared.bat.
+  Po restarcie będzie NOWY link (darmowy quick tunnel tak ma) — wyślij nowy.
+- Kolejność: najpierw tunel_start.bat (serwer!), potem cloudflared.
+  Odwrotnie tunel zastanie martwy port.
+- Opóźnienie przez internet (zależnie od łączy, zwykle setki ms) —
+  kropki minimalnie "za życiem". Do oglądania OK.
+- Kolega widzi WSZYSTKICH graczy na radarze (jak Ty). Miej tego świadomość.
+- usermode/config.json NIE ruszasz (localhost — gada lokalnie z serwerem).
+  Overlay na PC bez zmian (localhost). Firewall Windows może raz zapytać
+  o Node.js — kliknij Zezwalaj (sieci prywatne).
+- Potrzebujesz stałego adresu / własnej domeny? Załóż darmowe konto
+  Cloudflare Zero Trust i podepnij tunel na stałe (wtedy link się nie zmienia).

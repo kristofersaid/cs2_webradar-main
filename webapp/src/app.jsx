@@ -18,22 +18,25 @@ import {
   resetSites,
 } from "./utilities/bombsites";
 import { parseColorOverrides } from "./utilities/utilities";
-import { assignPlayerNumbers, parseListMode } from "./utilities/utilities";
+import { assignPlayerNumbers, parseListMode, resolveWebSocketURL } from "./utilities/utilities";
 import PlayerList from "./components/PlayerList";
 
 const CONNECTION_TIMEOUT = 5000;
 const RECONNECT_DELAY = 2000;
 
 /* Dane zawsze pochodzą z komputera-host (PC z CS2 + usermode.exe).
-   Frontend łączy się do tego samego hosta, z którego załadowano stronę
-   (window.location.hostname), więc podgląd działa też na telefonie w tej samej sieci Wi-Fi.
-   Np. otworzysz http://192.168.1.10:5173 na telefonie -> WebSocket poleci do ws://192.168.1.10:22006 */
+   LAN: WebSocket do tego samego hosta co strona (ws://host:22006).
+   TUNEL (https, np. Cloudflare): dane z tego samego origin
+   (wss://host/cs2_webradar) — kolega otwiera goły link, nic nie dopisuje.
+   Ręcznie: ?ws=HOST:PORT albo ?ws=wss://... */
 const PORT = 22006;
 
-const getWebSocketURL = () => {
-  const host = window.location.hostname || "localhost";
-  return `ws://${host}:${PORT}/cs2_webradar`;
-};
+const getWebSocketURL = () => resolveWebSocketURL(
+  window.location.search,
+  window.location.hostname || "localhost",
+  PORT,
+  window.location.protocol,
+);
 
 const DEFAULT_SETTINGS = {
   dotSize: 1,

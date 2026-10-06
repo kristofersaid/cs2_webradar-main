@@ -1,5 +1,6 @@
 import { WebSocketServer } from "ws";
 import { execFile } from "child_process";
+import { fileURLToPath } from "url";
 import fs from "fs";
 import path from "path";
 import http from "http";
@@ -10,11 +11,76 @@ console.log("web_server started")
 const port = 22006;
 // 0.0.0.0 = nasłuchuj na wszystkich interfejsach (localhost + LAN/Wi-Fi),
 // dzięki temu telefon w tej samej sieci Wi-Fi też dostanie dane z PC-hosta.
+// TEN SERWER serwuje też stronę (zbudowany frontend z ../dist) na tym samym
+// porcie — dzięki temu przez JEDEN tunel (np. Cloudflare) idzie i strona,
+// i dane (wss same-origin, zero mieszanych treści). Bez builda (npm run build)
+// endpointy strony zwracają 503 z podpowiedzią.
 const host = "0.0.0.0";
 const server = http.createServer();
 const web_socket_server = new WebSocketServer(
 {
     server: server, path: "/cs2_webradar"
+});
+
+// --- Serwowanie statyczne ../dist ---
+const DIST_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "dist");
+const INDEX_FILE = path.join(DIST_DIR, "index.html");
+
+const CONTENT_TYPES = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+    ".woff2": "font/woff2",
+};
+
+const serveFile = (res, file, status = 200) => {
+    fs.readFile(file, (err, data) => {
+        if (err) {
+            res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+            res.end("404");
+            return;
+        }
+        res.writeHead(status, { "Content-Type": CONTENT_TYPES[path.extname(file).toLowerCase()] || "application/octet-stream" });
+        res.end(data);
+    });
+};
+
+server.on("request", (req, res) => {
+    const urlPath = String(req.url || "/").split("?")[0];
+    if (urlPath === "/cs2_webradar") {
+        // Ścieżka WebSocket pusta przez GET — to nie strona.
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("to jest endpoint WebSocket, nie strona");
+        return;
+    }
+    let rel = decodeURIComponent(urlPath);
+    if (rel.endsWith("/")) rel += "index.html";
+    const file = path.normalize(path.join(DIST_DIR, rel));
+    if (!file.startsWith(DIST_DIR)) {
+        res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("403");
+        return;
+    }
+    fs.stat(file, (err, st) => {
+        if (!err && st.isFile()) {
+            serveFile(res, file);
+            return;
+        }
+        // SPA fallback: index.html (albo komunikat gdy brak builda).
+        fs.stat(INDEX_FILE, (e2, st2) => {
+            if (!e2 && st2.isFile()) {
+                serveFile(res, INDEX_FILE);
+            } else {
+                res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8" });
+                res.end("Brak zbudowanego frontendu: w webapp wykonaj 'npm run build'.");
+            }
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------
