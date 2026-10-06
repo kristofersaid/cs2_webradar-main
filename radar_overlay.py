@@ -685,7 +685,7 @@ def handle_command(cmd, state, state_lock, emitter):
             if not state.get("ws_lib", True):
                 print("[lista] UWAGA: nie masz biblioteki websocket-client, więc listy NIE będzie wcale.")
                 print("[lista] Napraw JEDNĄ komendą w nowym oknie PowerShell:")
-                print("[lista]   D:\\cs2_webradar-main> .\\venv\\Scripts\\python.exe -m pip install websocket-client")
+                print("[lista]   .\\venv\\Scripts\\python.exe -m pip install websocket-client")
             print("[lista] (tryby lista on/badges/panel/off i tak zadziałają — nie potrzebują meczu)")
             return None
         print(f"[lista] przeciwnicy ({len(enemies)}), mapa: {map_name or '?'}:")
@@ -974,7 +974,7 @@ def main():
     else:
         print("[ws] UWAGA: brak biblioteki websocket-client — komenda 'lista' NIE pokaże wrogów!")
         print("[ws] Napraw JEDNĄ komendą w nowym oknie PowerShell:")
-        print("[ws]   D:\\cs2_webradar-main> .\\venv\\Scripts\\python.exe -m pip install websocket-client")
+        print("[ws]   .\\venv\\Scripts\\python.exe -m pip install websocket-client")
     threading.Thread(target=ws_loop, args=(state, state_lock, stop_event), daemon=True).start()
     # Tryb orkiestratora (radar.bat): konsola należy do głównego okna
     # (komenda 'q' zamyka wszystko), więc pętla input() jest wyłączona.

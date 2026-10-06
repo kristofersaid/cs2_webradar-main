@@ -1,7 +1,8 @@
 @echo off
 net session >nul 2>&1
 if not "%ERRORLEVEL%"=="0" powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs" & exit /b 0
-set "ROOT=D:\cs2_webradar-main"
+set "ROOT=%~dp0"
+set "ROOT=%ROOT:~0,-1%"
 set "CF=%ROOT%\cloudflared.exe"
 if not exist "%CF%" set "CF="
 if "%CF%"=="" (
