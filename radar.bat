@@ -3,6 +3,18 @@ net session >nul 2>&1
 if not "%ERRORLEVEL%"=="0" powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs" & exit /b 0
 set "ROOT=%~dp0"
 set "ROOT=%ROOT:~0,-1%"
+if not exist "%ROOT%\webapp\node_modules" (
+    pushd "%ROOT%\webapp"
+    call npm ci >nul 2>&1
+    popd
+)
+if not exist "%ROOT%\webapp\node_modules" exit /b 1
+if not exist "%ROOT%\webapp\dist\index.html" (
+    pushd "%ROOT%\webapp"
+    call npm run build >nul 2>&1
+    popd
+)
+if not exist "%ROOT%\webapp\dist\index.html" exit /b 1
 set "CF=%ROOT%\cloudflared.exe"
 if not exist "%CF%" set "CF="
 if "%CF%"=="" (
